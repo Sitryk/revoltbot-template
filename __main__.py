@@ -102,18 +102,12 @@ async def shutdown(ev):
 async def help(ev):
     """Shows this help message"""
     ctx = Context.from_event(ev)
-    title_size = "Huge"
-    if title_size is not None:
-        bef = ('$\\' + title_size + ' ') if title_size else ''
-        aft = '$' if title_size else ''
-
     sorted_cmds = dict(sorted(bot._commands.items(), key=lambda x: x[0].lower()))
 
-    table = f"|{bef} Command {aft}|{bef} Usage {aft}|{bef} Description {aft}|\n"
+    table = f"| Command| Usage | Description |\n"
     table += "|-|-|-|\n"
     for name, cmd in sorted_cmds.items():
         table += f"| {name} | {cmd.signature} | {cmd.__doc__} \n"
-
     await ctx.channel.send(table)
 
 ##############
