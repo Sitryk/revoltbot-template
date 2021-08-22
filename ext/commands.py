@@ -21,6 +21,21 @@ class Command:
         else:
             return await self._callback(*args, **kwargs)
 
+    @property
+    def full_name(self):
+        """Full name for a subcommand"""
+        if self.parent is None:
+            return self.name
+        return self.parent.full_name + ' ' + self.name
+
+class Group(Command):
+
+    def __init__(self, *args, **kwargs):
+        self._commands = {}
+        super().__init__(*args, **kwargs)
+
+    def command(self, *args, **kwargs):
+        raise NotImplementedError
 
 class Plugin:
 
@@ -30,19 +45,28 @@ class Plugin:
             for attr_name, value in base.__dict__.items():
                 if isinstance(value, Command):
                     value.plugin = cls
-                    _commands[value.name] = value
+                    _commands[value.full_name] = value
         cls._commands = _commands
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
-def command(**attrs):
+def command(cls=None, **attrs):
+    """
+    Register a command
+    """
+    if cls is None:
+        cls = Command
+
     def decorator(func):
         name = attrs.get('name', func.__name__)
-        new_c = Command(func, name = name, **attrs)
+        new_c = cls(func, name=name, **attrs)
         return new_c 
     return decorator
 
 def group(**attrs):
-    raise NotImplementedError
+    """
+    Decorator for registering a command group
+    """
+    return command(cls=Group)

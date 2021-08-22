@@ -1,7 +1,28 @@
 from ext import commands
 from ext.objects import Context, Message
 
+from urllib.parse import urlencode
+
 COLOUR = ['#F66', '#FC6', '#CF6', '#6F6', '#6FC', '#6CF', '#66F', '#C6F']
+
+class Embed:
+    _KEYS = ('author', 'title', 'description', 'color', 'image_url')
+
+    def __init__(self, **kwargs):
+        self.author = kwargs.get('author', None)
+        self.title = kwargs.get('title', None)
+        self.description = kwargs.get('description', None)
+        self.color = kwargs.get('colour', None) or kwargs.get('color', None)
+        self.image = kwargs.get('image_url', None) or kwargs.get('image', None)
+
+    def __str__(self):
+        query = {}
+        for k in self._KEYS:
+            if not (v := getattr(self, k)) is None:
+                query[k] = v
+        end = urlencode(query)
+        print(end)
+        return "https://embed.rauf.workers.dev/?" + end
 
 class Dev(commands.Plugin):
 
@@ -9,17 +30,18 @@ class Dev(commands.Plugin):
         self.bot = bot
 
     @commands.command()
-    async def mention(self, event):
+    async def mention(self, ctx, id=None):
         """Mention the author"""
-        ctx = Context.from_event(event)
-        user = await self.bot.fetch_user(ctx.author.id)
+        if not id is None:
+            user = await self.bot.fetch_user(id)
+        else:
+            user = ctx.message.author
         await ctx.channel.send(user.mention)
 
     @commands.command()
-    async def rainbow(self, event):
-        """Rainbow-ify text"""
-        ctx = Context.from_event(event)
-        msg = event.raw_data['content'].split(' ', 1)[-1]
+    async def rainbow(self, ctx):
+        """Rainbow-ify text, color setting takes up a lot of character space."""
+        msg = ctx.message.content.split(' ', 1)[-1]
         new = '$\\textsf{'
         at = 1
         for idx, c in enumerate(msg):
@@ -32,3 +54,17 @@ class Dev(commands.Plugin):
                 break
         new += '}$'
         await ctx.channel.send(new)
+
+    @commands.command()
+    async def embed(self, ctx):
+        """Test custom embed"""
+        e = Embed(colour='00ff00', title='Swaggy test')
+        await ctx.channel.send(f"[]({e})")
+
+    @commands.command()
+    async def say(self, ctx, msg: str):
+        await ctx.channel.send(msg)
+
+    @commands.command()
+    async def test(self, ctx, *, rest: str):
+        await ctx.channel.send(rest)
