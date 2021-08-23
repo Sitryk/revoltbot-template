@@ -21,8 +21,9 @@ class Embed:
             if not (v := getattr(self, k)) is None:
                 query[k] = v
         end = urlencode(query)
-        print(end)
+        # relying on third party for embed lol moment lololoololololol
         return "https://embed.rauf.workers.dev/?" + end
+
 
 class Dev(commands.Plugin):
 
@@ -68,3 +69,22 @@ class Dev(commands.Plugin):
     @commands.command()
     async def test(self, ctx, *, rest: str):
         await ctx.channel.send(rest)
+
+    @commands.group()
+    async def group1(self, ctx):
+        """group1 parent"""
+        await ctx.channel.send('group1')
+
+    @group1.command()
+    async def s1(self, ctx):
+        """group1 sub1"""
+        await ctx.channel.send('g1s1')
+
+    @group1.group()
+    async def s2(self, ctx, *args):
+        """group1 sub2"""
+        await ctx.channel.send(f"g1s2 {args}")
+
+    @s2.command()
+    async def subsub(self, ctx):
+        await ctx.channel.send("group sub sub")
