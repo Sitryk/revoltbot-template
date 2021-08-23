@@ -52,6 +52,7 @@ async def on_ready(event: events.ReadyEvent) -> None:
     bot_info = data["users"][0]
     owner_id = bot_info['bot']['owner']
     owner = await bot.fetch_user(owner_id)
+    bot.id = bot_info["_id"]
     bot.owner = owner
 
     n_text = 0

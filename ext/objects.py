@@ -22,6 +22,8 @@ class User:
         self.badges = kwargs.get('bages', 0)
         self.relationship = kwargs.get('relationship', None)
         self.online = kwargs.get('online', None)
+        self.bot = kwargs.get('bot', None)
+        self.status = kwargs.get('status', None)
         self.raw_data = kwargs
 
     @property
