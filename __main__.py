@@ -3,6 +3,7 @@ from functools import partial
 import json
 import os
 import pathlib
+import time
 
 from mutiny import Client, events
 from mutiny._internal.rest import RESTClient
@@ -54,6 +55,7 @@ async def on_ready(event: events.ReadyEvent) -> None:
     owner = await bot.fetch_user(owner_id)
     bot.id = bot_info["_id"]
     bot.owner = owner
+    bot.init_time = time.time()
 
     n_text = 0
     n_voice = 0
@@ -127,21 +129,6 @@ async def on_message(event: events.MessageEvent) -> None:
 
 
 @bot.command()
-async def ping(ctx):
-    """Pong."""
-    await ctx.channel.send('Dong')
-
-@bot.command()
-async def shutdown(ctx):
-    """Shutdown le bot."""
-    if ctx.author != bot.owner:
-        await ctx.channel.send("Not allowed, pal.")
-        return
-    else:
-        await ctx.channel.send('Shutting down.')
-        await bot.close()
-
-@bot.command()
 async def help(ctx):
     """Shows this help message"""
     sorted_cmds = dict(sorted(bot._commands.items(), key=lambda x: x[0].lower()))
@@ -164,6 +151,9 @@ async def load(ctx, *cogs):
 
 from plugins._dev import Dev
 bot.add_plugin(Dev(bot))
+
+from plugins.core import Core
+bot.add_plugin(Core(bot))
 
 #############
 ### ENTRY ###
