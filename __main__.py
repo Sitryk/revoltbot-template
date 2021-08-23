@@ -120,8 +120,10 @@ async def on_message(event: events.MessageEvent) -> None:
     ctx = p_ctx
     # all commands take ctx oh well.
     ctx.command_args = [ctx, *ctx.command_args]
-    await ctx.command(*ctx.command_args)
-
+    try:
+        await ctx.command(*ctx.command_args)
+    except Exception as e:
+        await ctx.channel.send(str(e))
 
 ################################
 ### CUSTOM COMMAND EXTENSION ###
