@@ -34,8 +34,15 @@ class Group(Command):
         self._commands = {}
         super().__init__(*args, **kwargs)
 
-    def command(self, *args, **kwargs):
-        raise NotImplementedError
+    def command(self, cls=None, *args, **kwargs):
+        if cls is None:
+            cls = Command
+        return command(cls=cls, parent=self, *args, **kwargs)
+
+    def group(self, *args, **kwargs):
+        return self.command(cls=Group)
+
+        
 
 class Plugin:
 
@@ -45,6 +52,7 @@ class Plugin:
             for attr_name, value in base.__dict__.items():
                 if isinstance(value, Command):
                     value.plugin = cls
+                    print(value.full_name)
                     _commands[value.full_name] = value
         cls._commands = _commands
 
@@ -62,7 +70,7 @@ def command(cls=None, **attrs):
     def decorator(func):
         name = attrs.get('name', func.__name__)
         new_c = cls(func, name=name, **attrs)
-        return new_c 
+        return new_c
     return decorator
 
 def group(**attrs):

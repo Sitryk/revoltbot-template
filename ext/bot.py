@@ -42,17 +42,14 @@ class Bot(Client):
         if used_prefix is None:
             return
 
-        # print('prefix found')
-
         valid_cmd_name = None
         if ' ' in content:
             # I'm going to just impose 5 groups deep is enough...
             MAX_SUBGROUPS = 5
-            split_content = content.split(' ', MAX_SUBGROUPS-1)
-            # anything with less than 5 splits need to not index out of range
-            MAX_SUBGROUPS = min(len(split_content), MAX_SUBGROUPS)
-            for idx, i in enumerate(split_content, 1):
-                attempt = ' '.join(split_content[:idx-MAX_SUBGROUPS])
+            split_content = content.split(' ', MAX_SUBGROUPS)
+            for idx, _ in enumerate(split_content, 1):
+                terms = split_content[:idx]
+                attempt = ' '.join(terms)
                 if self.has_command(attempt):
                     valid_cmd_name = attempt
                     continue
@@ -68,9 +65,6 @@ class Bot(Client):
 
         rest = content[len(valid_cmd_name):]
         args = [s for s in rest.split(' ') if not s == '']
-        reduce_args = 0 if command.plugin is None else 1
-        print(command.signature.parameters)
-        args = args[:len(command.signature.parameters) - reduce_args]
         partial_ctx = objects.Context(prefix=used_prefix, command=command, command_args=args)
         return partial_ctx
 
@@ -78,8 +72,7 @@ class Bot(Client):
         return full_name in self._commands.keys() or full_name in self._aliased_commands.keys()
 
     def get_command(self, full_name: str) -> commands.Command:
-        cmd = self._commands.get(full_name, None) or self._aliased_commands.get(full_name, None)
-        return cmd
+        return self._commands.get(full_name, None) or self._aliased_commands.get(full_name, None)
 
     # anything fetching should be part of the mutiny Client
     async def fetch_channel(self, id: str) -> dict:

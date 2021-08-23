@@ -118,7 +118,6 @@ async def on_message(event: events.MessageEvent) -> None:
     ctx = p_ctx
     # all commands take ctx oh well.
     ctx.command_args = [ctx, *ctx.command_args]
-
     await ctx.command(*ctx.command_args)
 
 
@@ -152,6 +151,12 @@ async def help(ctx):
     for name, cmd in sorted_cmds.items():
         table += f"| {name} | {cmd.signature} | {cmd.__doc__} \n"
     await ctx.channel.send(table)
+
+@bot.command()
+async def load(ctx, *cogs):
+    """load cog(s) NOTIMEPLEMTERNDDED"""
+    pass
+
 
 ##############
 ### PLUGIN ###
