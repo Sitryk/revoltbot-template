@@ -161,4 +161,13 @@ bot.add_plugin(Core(bot))
 ### ENTRY ###
 #############
 
-asyncio.run(bot.start())
+async def main():
+    try:
+        await bot.start()
+    finally:
+        await bot.close()
+        # give Windows's asyncio event loop some time to prevent RuntimeError...
+        await asyncio.sleep(1)
+
+if __name__ == "__main__":
+    asyncio.run(main())
