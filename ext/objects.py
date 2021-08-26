@@ -2,10 +2,36 @@ import aiohttp
 import functools
 import os
 
-class Channel:
+from mutiny._internal.models import attachment, channel, message, permissions, server, user 
+
+class MutinyPatch:
+
+    def __init__(self, mutiny_object=None, **kwargs):
+        self._mutiny_object = mutiny_object
+        self.id = kwargs.pop('_id')
+
+    def __getattr__(self, key):
+        """Access self.__dict__ first then access self._mutiny_object"""
+        try:
+            ret = self.raw_data[key]
+            return ret
+        except KeyError:
+            pass
+
+        try:
+            ret = getattr(self._mutiny_object, key)
+            print(self._mutiny_object.__dict__)
+            return ret
+        except AttributeError:
+            pass
+
+        s = f'{self} has no attribute {key}'
+        raise AttributeError(s)
+
+class TextChannel(MutinyPatch):
 
     def __init__(self, **kwargs):
-        self.id = kwargs.get('_id')
+        super().__init__(**kwargs)
         self.raw_data = kwargs
 
     @property
@@ -13,17 +39,10 @@ class Channel:
         return f"<#{self.id}>"
 
 
-class User:
+class User(MutinyPatch):
 
     def __init__(self, **kwargs):
-        self.id = kwargs['_id']
-        self.username = kwargs.get('username', '')
-        self.avatar = kwargs.get('avatar', None)
-        self.badges = kwargs.get('bages', 0)
-        self.relationship = kwargs.get('relationship', None)
-        self.online = kwargs.get('online', None)
-        self.bot = kwargs.get('bot', None)
-        self.status = kwargs.get('status', None)
+        super().__init__(**kwargs)
         self.raw_data = kwargs
 
     @property
@@ -34,13 +53,10 @@ class User:
         return isinstance(other, self.__class__) and other.id == self.id
 
 
-class Message:
+class Message(MutinyPatch):
 
     def __init__(self, **kwargs):
-        self.id = kwargs['id']
-        self.author = kwargs['author']
-        self.content = kwargs['content']
-        self.channel = kwargs['channel']
+        super().__init__(**kwargs)
         self.raw_data = kwargs
 
 
@@ -51,6 +67,7 @@ class Context:
             setattr(self, k, v)
         self.raw_data = kwargs
 
-    @classmethod
-    def from_event(cls, event):
-        return cls(_event=event, **event.raw_data)
+    def _update(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        self.raw_data.update(kwargs)

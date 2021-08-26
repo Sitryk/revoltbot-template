@@ -1,9 +1,16 @@
 import asyncio
 from functools import partial
 import json
+import logging
 import os
 import pathlib
 import time
+
+# RICH TEXT FORMATTING
+from rich.console import Console
+from rich.pretty import Pretty
+from rich.panel import Panel
+from rich import print
 
 from mutiny import Client, events
 from mutiny._internal.rest import RESTClient
@@ -12,6 +19,7 @@ from ext.bot import Bot
 from ext import objects
 
 
+log = logging.getLogger('revoltbot.core')
 #############
 ### SETUP ###
 #############
@@ -20,6 +28,7 @@ _CONF_FILE = pathlib.Path(__file__).parent / "bot_config.json"
 _CONFIG = None
 
 ## First time token and prefix input?
+console = Console()
 
 try:
     with open(_CONF_FILE, 'r') as f:
@@ -34,7 +43,8 @@ except FileNotFoundError:
     _TOKEN = IN_TOKEN
     _PREFIXES = IN_PREFIXES
 except Exception as e:
-    print(e)
+    console.print_exception(show_locals=True)
+    # print(e)
 else:
     _TOKEN = _CONFIG['TOKEN']
     _PREFIXES = _CONFIG['PREFIXES']
@@ -52,7 +62,10 @@ async def on_ready(event: events.ReadyEvent) -> None:
     data = event.raw_data
     bot_info = data["users"][0]
     owner_id = bot_info['bot']['owner']
-    owner = await bot.fetch_user(owner_id)
+    try:
+        owner = objects.User(mutiny_object=bot.get_user(owner_id))
+    except KeyError:
+        owner = await bot.fetch_user(owner_id)
     bot.id = bot_info["_id"]
     bot.owner = owner
     bot.init_time = time.time()
@@ -65,12 +78,8 @@ async def on_ready(event: events.ReadyEvent) -> None:
         elif channel["channel_type"] == "VoiceChannel":
             n_voice += 1
 
-    CENTER_BY = 80
-
-    startup_msg = [s.center(CENTER_BY) for s in [".\n",
-           "----------------------------------------",
+    startup_msg = [
           f"~~ Revolt.chat Bot, powered by Mutiny ~~",
-           "----------------------------------------",
           f"Hi, I'm {bot_info['username']}",
           f"I belong to {owner.username} [{owner.id}]",
           f"Prefixes: {_PREFIXES}",
@@ -78,11 +87,16 @@ async def on_ready(event: events.ReadyEvent) -> None:
           f"{len(data['servers'])} servers",
           f"{n_text} text channels",
           f"{n_voice} voice channels",
-          f"Invite URL: https://app.revolt.chat/bot/{bot_info['_id']}",
-           "-----------------------------------------"
-           ]]
+          f"Invite URL: https://app.revolt.chat/bot/{bot_info['_id']}"
+           ]
+    WIDTH = len(max(startup_msg, key=len))
+    startup_msg = [s.center(WIDTH) for s in startup_msg]
+    [startup_msg.insert(index, '-'*WIDTH) for index in (0, 2, len(startup_msg)+2)]
 
-    print(bot._commands)
+    pretty = Pretty(bot._commands)
+    panel = Panel(pretty)
+    print(panel)
+    print()
     print('\n'.join(startup_msg))
 
 
@@ -112,9 +126,10 @@ async def on_message(event: events.MessageEvent) -> None:
 
     # fill the rest of p_ctx in such as channel objects etc.
     p_ctx.event = event
-    p_ctx.channel = await bot.fetch_channel(id=dat['channel'])
+    p_ctx.channel = objects.TextChannel(mutiny_object=bot.get_channel(dat['channel']))
+    # cant inject this send function :(
     p_ctx.channel.send = partial(bot.send_to_channel, p_ctx.channel.id)
-    p_ctx.author = await bot.fetch_user(id=dat['author'])
+    p_ctx.author = objects.User(mutiny_object=bot.get_user(dat['author']))
     p_ctx.message = objects.Message(id=dat['_id'], author=p_ctx.author, content=msg, channel=p_ctx.channel)
 
     ctx = p_ctx
@@ -123,6 +138,7 @@ async def on_message(event: events.MessageEvent) -> None:
     try:
         await ctx.command(*ctx.command_args)
     except Exception as e:
+        log.exception("Something went wrong:", exc_info=e)
         await ctx.channel.send(str(e))
 
 ################################
@@ -138,6 +154,8 @@ async def help(ctx):
     table = f"| Command| Usage | Description |\n"
     table += "|-|-|-|\n"
     for name, cmd in sorted_cmds.items():
+        if cmd.hidden:
+            continue
         table += f"| {name} | {cmd.signature} | {cmd.__doc__} \n"
     await ctx.channel.send(table)
 
@@ -161,4 +179,14 @@ bot.add_plugin(Core(bot))
 ### ENTRY ###
 #############
 
-asyncio.run(bot.start())
+async def main():
+    try:
+        await bot.start()
+    finally:
+        await bot.close()
+        # give Windows's asyncio event loop some time to prevent RuntimeError...
+        await asyncio.sleep(1)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
