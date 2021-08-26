@@ -47,7 +47,10 @@ class Core(commands.Plugin):
     @commands.command()
     async def ping(self, ctx):
         """Pong."""
-        await ctx.channel.send("Pong.")
+        before = time.monotonic()
+        message = await ctx.channel.send("Pls wait...")
+        ping = (time.monotonic() - before) * 1000
+        await ctx.channel.send(f"Ping pong! {int(ping)}ms")
 
     @commands.command()
     async def shutdown(self, ctx):

@@ -1,6 +1,11 @@
 from ext import commands
 from ext.objects import Context, Message
 
+from mutiny import events
+
+import rich
+from rich import print
+
 from urllib.parse import urlencode
 
 COLOUR = ['#F66', '#FC6', '#CF6', '#6F6', '#6FC', '#6CF', '#66F', '#C6F']
@@ -56,35 +61,23 @@ class Dev(commands.Plugin):
         new += '}$'
         await ctx.channel.send(new)
 
-    @commands.command()
+    @commands.command(hidden=True)
     async def embed(self, ctx):
         """Test custom embed"""
         e = Embed(colour='00ff00', title='Swaggy test')
         await ctx.channel.send(f"[]({e})")
 
-    @commands.command()
-    async def say(self, ctx, msg: str):
-        await ctx.channel.send(msg)
+    @commands.listener(events.MessageEvent)
+    async def on_message(self, event):
+        data = event.raw_data
+        if data['author'] == self.bot.id:
+                return
 
-    @commands.command()
-    async def test(self, ctx, *, rest: str):
-        await ctx.channel.send(rest)
+        if 'content' in data.keys() and isinstance((msg := data['content']), str) and 'SEND' in msg:
+            await self.bot.send_to_channel(data['channel'], str(msg))
 
-    @commands.group()
-    async def group1(self, ctx):
-        """group1 parent"""
-        await ctx.channel.send('group1')
-
-    @group1.command()
-    async def s1(self, ctx):
-        """group1 sub1"""
-        await ctx.channel.send('g1s1')
-
-    @group1.group()
-    async def s2(self, ctx, *args):
-        """group1 sub2"""
-        await ctx.channel.send(f"g1s2 {args}")
-
-    @s2.command()
-    async def subsub(self, ctx):
-        await ctx.channel.send("group sub sub")
+        pretty = rich.pretty.Pretty(event.raw_data)
+        panel = rich.panel.Panel(pretty)
+        print(panel)
+        print(event.message)
+        print(event.type)
