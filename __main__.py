@@ -126,6 +126,7 @@ async def on_message(event: events.MessageEvent) -> None:
 
     # fill the rest of p_ctx in such as channel objects etc.
     p_ctx.event = event
+    print(dat['channel'])
     p_ctx.channel = objects.TextChannel(mutiny_object=bot.get_channel(dat['channel']))
     # cant inject this send function :(
     p_ctx.channel.send = partial(bot.send_to_channel, p_ctx.channel.id)

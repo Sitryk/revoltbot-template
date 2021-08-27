@@ -8,7 +8,10 @@ class MutinyPatch:
 
     def __init__(self, mutiny_object=None, **kwargs):
         self._mutiny_object = mutiny_object
-        self.id = kwargs.pop('_id')
+        if mutiny_object:
+            self.id = mutiny_object.id
+        else:
+            self.id = kwargs.get('_id') or kwargs.get('id')
 
     def __getattr__(self, key):
         """Access self.__dict__ first then access self._mutiny_object"""

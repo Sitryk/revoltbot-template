@@ -67,17 +67,17 @@ class Dev(commands.Plugin):
         e = Embed(colour='00ff00', title='Swaggy test')
         await ctx.channel.send(f"[]({e})")
 
-    @commands.listener(events.MessageEvent)
-    async def on_message(self, event):
-        data = event.raw_data
-        if data['author'] == self.bot.id:
-                return
+    # @commands.listener(events.MessageEvent)
+    # async def on_message(self, event):
+    #     data = event.raw_data
+    #     if data['author'] == self.bot.id:
+    #             return
 
-        if 'content' in data.keys() and isinstance((msg := data['content']), str) and 'SEND' in msg:
-            await self.bot.send_to_channel(data['channel'], str(msg))
+    #     if 'content' in data.keys() and isinstance((msg := data['content']), str) and 'SEND' in msg:
+    #         await self.bot.send_to_channel(data['channel'], str(msg))
 
-        pretty = rich.pretty.Pretty(event.raw_data)
-        panel = rich.panel.Panel(pretty)
-        print(panel)
-        print(event.message)
-        print(event.type)
+    #     pretty = rich.pretty.Pretty(event.raw_data)
+    #     panel = rich.panel.Panel(pretty)
+    #     print(panel)
+    #     print(event.message)
+    #     print(event.type)
