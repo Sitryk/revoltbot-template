@@ -60,13 +60,7 @@ bot = Bot(prefixes=_PREFIXES, token=_TOKEN)
 @bot.listen()
 async def on_ready(event: events.ReadyEvent) -> None:
     data = event.raw_data
-    bot_info = data["users"][0]
-    owner_id = bot_info['bot']['owner']
-    try:
-        owner = objects.User(mutiny_object=bot.get_user(owner_id))
-    except KeyError:
-        owner = await bot.fetch_user(owner_id)
-    bot.id = bot_info["_id"]
+    owner = objects.User(mutiny_object=await bot._ensure_user(bot.user.bot.owner_id))
     bot.owner = owner
     bot.init_time = time.time()
 
@@ -80,14 +74,14 @@ async def on_ready(event: events.ReadyEvent) -> None:
 
     startup_msg = [
           f"~~ Revolt.chat Bot, powered by Mutiny ~~",
-          f"Hi, I'm {bot_info['username']}",
+          f"Hi, I'm {bot.user.username}",
           f"I belong to {owner.username} [{owner.id}]",
           f"Prefixes: {_PREFIXES}",
            "Connected to:",
           f"{len(data['servers'])} servers",
           f"{n_text} text channels",
           f"{n_voice} voice channels",
-          f"Invite URL: https://app.revolt.chat/bot/{bot_info['_id']}"
+          f"Invite URL: https://app.revolt.chat/bot/{bot.user.id}"
            ]
     WIDTH = len(max(startup_msg, key=len))
     startup_msg = [s.center(WIDTH) for s in startup_msg]
@@ -103,15 +97,21 @@ async def on_ready(event: events.ReadyEvent) -> None:
 @bot.listen()
 async def on_message(event: events.MessageEvent) -> None:
     dat = event.raw_data
+    # for now I'm going to start getting and fetching
+    # users just to have them in state from the start
+    try:
+        user = bot.get_user(dat['author'])
+    except KeyError:
+        user = await bot.fetch_user(dat['author'])
+    finally:
+        user = objects.User(mutiny_object=user)
+
     msg = dat.get('content', None)
     if not isinstance(msg, str):
         print(event)
         return
 
-    # also gross fetching the user every time because
-    # the users aren't cached and we don't know if the
     # author is a bot
-    user = await bot.fetch_user(dat['author'])
     if "bot" in user.raw_data.keys():
         return
 
@@ -126,15 +126,11 @@ async def on_message(event: events.MessageEvent) -> None:
 
     # fill the rest of p_ctx in such as channel objects etc.
     p_ctx.event = event
-    print(dat['channel'])
     p_ctx.channel = objects.TextChannel(mutiny_object=bot.get_channel(dat['channel']))
     # cant inject this send function :(
     p_ctx.channel.send = partial(bot.send_to_channel, p_ctx.channel.id)
-    try:
-        p_ctx.author = objects.User(mutiny_object=bot.get_user(dat['author']))
-    except KeyError:
-        p_ctx.author = objects.User(mutiny_object=bot.fetch_user(dat['author']))
-    p_ctx.message = objects.Message(id=dat['_id'], author=p_ctx.author, content=msg, channel=p_ctx.channel)
+    p_ctx.author = user
+    p_ctx.message = objects.Message(mutiny_object=event.message, author=p_ctx.author, content=msg, channel=p_ctx.channel)
 
     ctx = p_ctx
     # all commands take ctx oh well.
