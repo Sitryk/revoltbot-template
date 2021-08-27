@@ -86,11 +86,11 @@ class Bot(Client):
         _msg = objects.Message(mutiny_object=event.message)
         _author = objects.User(mutiny_object=await self._ensure_user(_msg.author_id))
         _channel = objects.TextChannel(mutiny_object=self.get_channel(_msg.channel_id))
-        _channel.send = partialmethod(self.send_to_channel, _channel.id)
+        _channel.send = partial(self.send_to_channel, _channel.id)
         _msg.author = _author
         _msg.channel = _channel
-        _msg.edit = partialmethod(self.edit_message, _channel.id, _msg.id)
-        _msg.delete = partialmethod(self.delete_message, _msg.id)
+        _msg.edit = partial(self.edit_message, _channel.id, _msg.id)
+        _msg.delete = partial(self.delete_message, _msg.id)
         partial_ctx = objects.Context(message=_msg, channel=_channel, author=_author)
         return partial_ctx
 
