@@ -1,3 +1,7 @@
 class CommandError(Exception):
     """Base Command Exception"""
-    pass
+    ...
+
+class PluginError(Exception):
+    """Base Plugin Exception"""
+    ...
