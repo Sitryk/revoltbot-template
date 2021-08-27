@@ -4,6 +4,7 @@ from functools import partial, partialmethod
 
 from ulid import monotonic as ulid
 
+import mutiny
 from mutiny._internal.client import Client
 from . import commands
 from . import objects
@@ -148,8 +149,10 @@ class Bot(Client):
         async with aiohttp.ClientSession(headers=self._rest.headers) as session:
             resp = await session.get(user_url)
             user_data = await resp.json()
+            # update the user cache
+            user = self._state.users[id] = mutiny.models.User(self._state, user_data)
             await session.close()
-        return objects.User(**user_data)
+        return user
 
     async def send_to_channel(self, channel_id, content, **kwargs):
         location = f"https://api.revolt.chat/channels/{channel_id}/messages"
