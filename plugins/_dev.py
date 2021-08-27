@@ -34,6 +34,7 @@ class Dev(commands.Plugin):
 
     def __init__(self, bot):
         self.bot = bot
+        self.hello_enabled = False
 
     @commands.command()
     async def mention(self, ctx, id=None):
@@ -67,17 +68,20 @@ class Dev(commands.Plugin):
         e = Embed(colour='00ff00', title='Swaggy test')
         await ctx.channel.send(f"[]({e})")
 
-    # @commands.listener(events.MessageEvent)
-    # async def on_message(self, event):
-    #     data = event.raw_data
-    #     if data['author'] == self.bot.id:
-    #             return
+    @commands.command()
+    async def togglehello(self, ctx):
+        """Toggle the hello listener on"""
+        self.hello_enabled = state = not self.hello_enabled
+        await ctx.channel.send(f"Hello listener enabled: `{state}`")
 
-    #     if 'content' in data.keys() and isinstance((msg := data['content']), str) and 'SEND' in msg:
-    #         await self.bot.send_to_channel(data['channel'], str(msg))
+    @commands.listener(events.MessageEvent)
+    async def on_message(self, event):
+        if not self.hello_enabled:
+            return
 
-    #     pretty = rich.pretty.Pretty(event.raw_data)
-    #     panel = rich.panel.Panel(pretty)
-    #     print(panel)
-    #     print(event.message)
-    #     print(event.type)
+        ctx = await self.bot.create_context(event)
+        if ctx.author.is_bot or ctx.author.id == self.bot.user.id:
+                return
+
+        if (msg := ctx.message.content) and 'hello' in msg.lower():
+            await ctx.channel.send("hello :)")
