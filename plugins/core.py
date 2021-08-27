@@ -55,7 +55,7 @@ class Core(commands.Plugin):
     @commands.command()
     async def shutdown(self, ctx):
         """Shutdown the bot."""
-        if ctx.author != self.bot.owner:
+        if ctx.author.id != self.bot.owner.id:
             return await ctx.channel.send("Unauthorised.")
         else:
             await ctx.channel.send("Shutting down.")
