@@ -130,7 +130,10 @@ async def on_message(event: events.MessageEvent) -> None:
     p_ctx.channel = objects.TextChannel(mutiny_object=bot.get_channel(dat['channel']))
     # cant inject this send function :(
     p_ctx.channel.send = partial(bot.send_to_channel, p_ctx.channel.id)
-    p_ctx.author = objects.User(mutiny_object=bot.get_user(dat['author']))
+    try:
+        p_ctx.author = objects.User(mutiny_object=bot.get_user(dat['author']))
+    except KeyError:
+        p_ctx.author = objects.User(mutiny_object=bot.fetch_user(dat['author']))
     p_ctx.message = objects.Message(id=dat['_id'], author=p_ctx.author, content=msg, channel=p_ctx.channel)
 
     ctx = p_ctx
