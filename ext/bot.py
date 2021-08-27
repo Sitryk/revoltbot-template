@@ -18,11 +18,12 @@ class Bot(Client):
     def __init__(self, prefixes: list[str], *, token: str):
         prefixes.sort(key=len, reverse=True)
         self.prefixes = prefixes
+        self.plugins = {}
         super().__init__(token=token)
 
     @property
     def user(self):
-        return self.get_user(self.id)
+        return self._state.user
     
 
     # think this should be returning a decorator not being its own...
@@ -74,12 +75,18 @@ class Bot(Client):
         partial_ctx = objects.Context(prefix=used_prefix, command=command, command_args=args)
         return partial_ctx
 
-    def create_context(self, event):
+    async def _ensure_user(self, id):
+        try:
+            return self.get_user(id)
+        except KeyError:
+            return await self.fetch_user(id)
+
+    async def create_context(self, event):
         data = event.raw_data
         _msg = objects.Message(mutiny_object=event.message)
-        _channel = objects.Channel(self.get_channel(_msg.channel_id))
+        _author = objects.User(mutiny_object=await self._ensure_user(_msg.author_id))
+        _channel = objects.TextChannel(mutiny_object=self.get_channel(_msg.channel_id))
         _channel.send = partialmethod(self.send_to_channel, _channel.id)
-        _author = objects.User(self.get_channel(_msg.author_id))
         _msg.author = _author
         _msg.channel = _channel
         _msg.edit = partialmethod(self.edit_message, _channel.id, _msg.id)
@@ -106,6 +113,12 @@ class Bot(Client):
         return True
 
     def add_plugin(self, plugin: commands.Plugin):
+        plugin_name = plugin.__class__.__name__
+        if not plugin_name in self.plugins.keys():
+            self.plugins[plugin_name] = plugin
+        else:
+            raise errors.PluginError(f'Plugin with name {plugin_name} is already loaded. '
+                                     'Please rename or unload the plugin before loading the other')
         for cmd_name, cmd in plugin._commands.items():
             # for some reason the commands plugin isn't updated at this point so
             # just gonna inject it lol
@@ -117,9 +130,17 @@ class Bot(Client):
             event_cls = listener.__commands_listener__
             self.add_listener(listener, event_cls=event_cls)
 
-    def remove_plugin(self, plugin_cls: commands.Plugin):
-        for cmd_name in plugin_cls._commands.keys():
+    def remove_plugin(self, plugin: commands.Plugin):
+        for cmd_name in plugin._commands.keys():
             self.remove_command(cmd_name)
+
+        for name in plugin._listener_names:
+            listener = getattr(plugin, name)
+            event_cls = listener.__commands_listener__
+            # client doesn't offer a remove_listener event currently
+            print(listener, event_cls)
+            if issubclass(event_cls, mutiny.events.Event):
+                self._event_handler.listeners[event_cls].remove(listener)
 
     # client stuff.
 
@@ -140,8 +161,9 @@ class Bot(Client):
         async with aiohttp.ClientSession(headers=self._rest.headers) as session:
             resp = await session.get(channel_url)
             channel_data = await resp.json()
+            channel = self._state.channels[id] = mutiny.models.TextChannel(self._state, channel_data)
             await session.close()
-        return objects.Channel(**channel_data)
+        return channel
 
     async def fetch_user(self, id: str) -> dict:
         """Make a GET request for user info"""
