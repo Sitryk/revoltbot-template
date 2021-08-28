@@ -1,5 +1,5 @@
 from ext import commands
-from ext.objects import Context
+from ext.objects import Context, User
 
 import aiohttp
 import json
@@ -48,14 +48,14 @@ class Core(commands.Plugin):
     async def ping(self, ctx):
         """Pong."""
         before = time.monotonic()
-        message = await ctx.channel.send("Pls wait...")
+        await ctx.channel.send("Pls wait...")
         ping = (time.monotonic() - before) * 1000
         await ctx.channel.send(f"Ping pong! {int(ping)}ms")
 
     @commands.command()
     async def shutdown(self, ctx):
         """Shutdown the bot."""
-        if ctx.author.id != self.bot.owner.id:
+        if ctx.author != self.bot.owner:
             return await ctx.channel.send("Unauthorised.")
         else:
             await ctx.channel.send("Shutting down.")
@@ -66,13 +66,13 @@ class Core(commands.Plugin):
         """Bot information."""
         mutinyv = mutiny.__version__
         pythonv = platform.python_version()
-        botinfo = await self.bot.fetch_user(self.bot.id)
+        botinfo = User(mutiny_object=await self.bot._ensure_user(self.bot.user.id))
         name = botinfo.username
-        avatar = botinfo.avatar["_id"]
-        msg = f"# [](https://autumn.revolt.chat/avatars/{avatar}?width=240)[{name}](/@{self.bot.id})\n"
+        avatar = botinfo.avatar.id
+        msg = f"# [](https://autumn.revolt.chat/avatars/{avatar}?width=240)[{name}](/@{self.bot.user.id})\n"
         msg += f"**Mutiny:** [{mutinyv}](https://pypi.org/project/mutiny/)\n"
         msg += f"**Python:** [{pythonv}](https://www.python.org)\n"
-        msg += f"**Invite URL:** https://app.revolt.chat/bot/{self.bot.id}"
+        msg += f"**Invite URL:** https://app.revolt.chat/bot/{self.bot.user.id}"
         await ctx.channel.send(msg)
 
     @commands.command()
@@ -173,13 +173,13 @@ class Core(commands.Plugin):
         presli = ["busy", "idle", "invisible", "online"]
         for i in presli:
             if presence.lower() == i:
-                botinfo = await self.bot.fetch_user(self.bot.id)
-                if botinfo.status is None:
+                botinfo = User(mutiny_object=await self.bot._ensure_user(self.bot.user.id))
+                if not botinfo.status:
                     json_data = {"status": {"presence": presence.title()}}
-                elif "text" not in botinfo.status:
+                elif not botinfo.status.text:
                     json_data = {"status": {"presence": presence.title()}}
                 else:
-                    status = botinfo.status["text"]
+                    status = botinfo.status.text
                     json_data = {"status": {"text": status, "presence": presence.title()}}
                 success = await self.update_user(json_data)
                 if success == 200:
@@ -192,13 +192,13 @@ class Core(commands.Plugin):
         """Update the bot's status."""
         if ctx.author != self.bot.owner:
             return await ctx.channel.send("Unauthorised.")
-        botinfo = await self.bot.fetch_user(self.bot.id)
-        if botinfo.status is None:
+        botinfo = User(mutiny_object=await self.bot._ensure_user(self.bot.user.id))
+        if not botinfo.status:
             json_data = {"status": {"text": " ".join(status)}}
-        elif "presence" not in botinfo.status:
+        elif not botinfo.status.presence:
             json_data = {"status": {"text": " ".join(status)}}
         else:
-            presence = botinfo.status["presence"]
+            presence = botinfo.status.presence.value
             json_data = {"status": {"text": " ".join(status), "presence": presence}}
         success = await self.update_user(json_data)
         if success == 200:
