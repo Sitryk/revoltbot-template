@@ -24,6 +24,7 @@ class Bot(Client):
         super().__init__(token=token)
 
     async def start(self):
+        await super().start()
         for file in os.listdir("plugins"):
             if file.endswith(".py"):
                 name = file[:-3]
@@ -31,12 +32,11 @@ class Bot(Client):
                     await asyncio.wait_for(self.load_plugin(f"plugins.{name}"), 30)
                 except asyncio.TimeoutError:
                     print(f'Failed to load extension {name}')
-        await super().start()
 
     async def close(self):
+        await super().close()
         for plugin in self.plugins:
             await self.unload_plugin(plugin)
-        await super().close()
         
     @property
     def user(self):
