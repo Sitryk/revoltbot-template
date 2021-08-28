@@ -160,20 +160,39 @@ async def help(ctx):
     await ctx.channel.send(table)
 
 @bot.command()
-async def load(ctx, *cogs):
+async def load(ctx, plugin: str):
     """load cog(s) NOTIMEPLEMTERNDDED"""
-    pass
+    await bot.load_plugin(f"plugins.{plugin}")
+    await ctx.channel.send(f"{plugin} loaded")
+
+@bot.command()
+async def unload(ctx, plugin: str):
+    """unload cog(s) NOTIMEPLEMTERNDDED"""
+    await bot.unload_plugin(plugin)
+    await ctx.channel.send(f"{plugin} unloaded")
+
+@bot.command()
+async def reload(ctx, plugin: str):
+    """reload cog(s) NOTIMEPLEMTERNDDED"""
+    await bot.unload_plugin(plugin)
+    await bot.load_plugin(f"plugins.{plugin}")
+    await ctx.channel.send(f"{plugin} reloaded")
+
+@bot.command()
+async def plugins(ctx):
+    """loaded cogs"""
+    await ctx.channel.send(bot.plugins)
 
 
 ##############
 ### PLUGIN ###
 ##############
 
-from plugins._dev import Dev
-bot.add_plugin(Dev(bot))
+# from plugins._dev import Dev
+# bot.add_plugin(Dev(bot))
 
-from plugins.core import Core
-bot.add_plugin(Core(bot))
+# from plugins.core import Core
+# bot.add_plugin(Core(bot))
 
 #############
 ### ENTRY ###
