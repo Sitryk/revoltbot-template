@@ -2,6 +2,7 @@ import asyncio
 import aiohttp
 import os
 import importlib.util
+from copy import deepcopy
 from functools import partial, partialmethod
 
 from ulid import monotonic as ulid
@@ -24,19 +25,28 @@ class Bot(Client):
         super().__init__(token=token)
 
     async def start(self):
-        await super().start()
         for file in os.listdir("plugins"):
             if file.endswith(".py"):
                 name = file[:-3]
                 try:
                     await asyncio.wait_for(self.load_plugin(f"plugins.{name}"), 30)
                 except asyncio.TimeoutError:
-                    print(f'Failed to load extension {name}')
+                    print(f'Failed to load extension {name} (timeout)')
+                except Exception as e:
+                    print(e)
+        
+        await super().start()
 
     async def close(self):
+        plugins = deepcopy(list(self.plugins.keys()))
+        for plugin in plugins:
+            try:
+                 await asyncio.wait_for(self.unload_plugin(plugin), 30)
+            except asyncio.TimeoutError:
+                    print(f'Failed to load extension {plugin} (timeout)')
+            except Exception as e:
+                print(e)
         await super().close()
-        for plugin in self.plugins:
-            await self.unload_plugin(plugin)
         
     @property
     def user(self):
