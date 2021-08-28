@@ -46,9 +46,9 @@ class Dev(commands.Plugin):
         await ctx.channel.send(user.mention)
 
     @commands.command()
-    async def rainbow(self, ctx):
+    async def rainbow(self, ctx, *msg):
         """Rainbow-ify text, color setting takes up a lot of character space."""
-        msg = ctx.message.content.split(' ', 1)[-1]
+        msg = ' '.join(msg)
         new = '$\\textsf{'
         at = 1
         for idx, c in enumerate(msg):
