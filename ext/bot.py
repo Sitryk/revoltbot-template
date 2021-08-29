@@ -1,5 +1,8 @@
+import asyncio
 import aiohttp
 import os
+import importlib.util
+from copy import deepcopy
 from functools import partial, partialmethod
 
 from ulid import monotonic as ulid
@@ -21,6 +24,30 @@ class Bot(Client):
         self.plugins = {}
         super().__init__(token=token)
 
+    async def start(self):
+        for file in os.listdir("plugins"):
+            if file.endswith(".py"):
+                name = file[:-3]
+                try:
+                    await asyncio.wait_for(self.load_plugin(f"plugins.{name}"), 30)
+                except asyncio.TimeoutError:
+                    print(f'Failed to load extension {name} (timeout)')
+                except Exception as e:
+                    print(e)
+        
+        await super().start()
+
+    async def close(self):
+        plugins = deepcopy(list(self.plugins.keys()))
+        for plugin in plugins:
+            try:
+                 await asyncio.wait_for(self.unload_plugin(plugin), 30)
+            except asyncio.TimeoutError:
+                    print(f'Failed to load extension {plugin} (timeout)')
+            except Exception as e:
+                print(e)
+        await super().close()
+        
     @property
     def user(self):
         return self._state.user
@@ -112,13 +139,36 @@ class Bot(Client):
             self._aliased_commands.pop(alias)
         return True
 
-    def add_plugin(self, plugin: commands.Plugin):
-        plugin_name = plugin.__class__.__name__
-        if not plugin_name in self.plugins.keys():
-            self.plugins[plugin_name] = plugin
-        else:
-            raise errors.PluginError(f'Plugin with name {plugin_name} is already loaded. '
+    async def load_plugin(self, plugin: str):
+        module = importlib.util.find_spec(plugin)
+        if module is None:
+            raise errors.PluginError(f'No module named {plugin}')
+        if module.name in self.plugins:
+            raise errors.PluginError(f'Plugin with name {module.name} is already loaded. '
                                      'Please rename or unload the plugin before loading the other')
+
+        plugin = module.loader.load_module()
+        if not hasattr(plugin, "setup"):
+            raise errors.PluginError(f'Plugin {module.name} does not have a setup function')
+        
+        if asyncio.iscoroutinefunction(plugin.setup):
+            await plugin.setup(self)
+        else:
+            plugin.setup(self)
+
+    async def unload_plugin(self, name: str):
+        if name not in self.plugins:
+            raise errors.PluginError(f'Plugin {name} is not loaded')
+        plugin = self.plugins.pop(name)
+        if hasattr(plugin, "teardown"):
+            if asyncio.iscoroutinefunction(plugin.teardown):
+                await plugin.teardown(self)
+            else:
+                plugin.teardown(self)
+        self.remove_plugin(plugin)
+
+    def add_plugin(self, plugin: commands.Plugin):
+        self.plugins[plugin.__class__.__name__.lower()] = plugin
         for cmd_name, cmd in plugin._commands.items():
             # for some reason the commands plugin isn't updated at this point so
             # just gonna inject it lol

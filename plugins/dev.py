@@ -85,3 +85,7 @@ class Dev(commands.Plugin):
 
         if (msg := ctx.message.content) and 'hello' in msg.lower():
             await ctx.channel.send("hello :)")
+
+
+def setup(bot):
+    bot.add_plugin(Dev(bot))

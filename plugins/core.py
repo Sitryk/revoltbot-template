@@ -229,3 +229,7 @@ class Core(commands.Plugin):
     #        await ctx.channel.send("Username updated!")
     #    else:
     #        await ctx.channel.send(f"Update failed. ({success})")
+
+
+async def setup(bot):
+    bot.add_plugin(Core(bot))

@@ -16,6 +16,7 @@ from mutiny import Client, events
 from mutiny._internal.rest import RESTClient
 
 from ext.bot import Bot
+from ext import errors
 from ext import objects
 
 
@@ -160,20 +161,40 @@ async def help(ctx):
     await ctx.channel.send(table)
 
 @bot.command()
-async def load(ctx, *cogs):
-    """load cog(s) NOTIMEPLEMTERNDDED"""
-    pass
+async def load(ctx, plugin: str):
+    """Load a plugin."""
+    try:
+        await bot.load_plugin(f"plugins.{plugin}")
+    except errors.PluginError as e:
+        await ctx.channel.send(f"Error: {e}")
+    else:
+        await ctx.channel.send(f"Loaded {plugin}.")
 
+@bot.command()
+async def unload(ctx, plugin: str):
+    """Unload a plugin."""
+    try:
+        await bot.unload_plugin(plugin)
+    except errors.PluginError as e:
+        await ctx.channel.send(f"Error: {e}")
+    else:
+        await ctx.channel.send(f"Unloaded {plugin}.")
 
-##############
-### PLUGIN ###
-##############
+@bot.command()
+async def reload(ctx, plugin: str):
+    """Reload a plugin."""
+    try:
+        await bot.unload_plugin(plugin)
+        await bot.load_plugin(f"plugins.{plugin}")
+    except errors.PluginError as e:
+        await ctx.channel.send(f"Error: {e}")
+    else:
+        await ctx.channel.send(f"Reloaded {plugin}.")
 
-from plugins._dev import Dev
-bot.add_plugin(Dev(bot))
-
-from plugins.core import Core
-bot.add_plugin(Core(bot))
+@bot.command()
+async def plugins(ctx):
+    """List all loaded plugins"""
+    await ctx.channel.send("Loaded plugins:" + " , ".join(bot.plugins.keys()))
 
 #############
 ### ENTRY ###
