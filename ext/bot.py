@@ -4,6 +4,7 @@ import os
 import importlib.util
 from copy import deepcopy
 from functools import partial, partialmethod
+import pathlib
 
 from ulid import monotonic as ulid
 
@@ -25,7 +26,8 @@ class Bot(Client):
         super().__init__(token=token)
 
     async def start(self):
-        for file in os.listdir("plugins"):
+        plugin_dir = pathlib.Path(__file__).parent.parent / 'plugins'
+        for file in os.listdir(plugin_dir):
             if file.endswith(".py"):
                 name = file[:-3]
                 try:
