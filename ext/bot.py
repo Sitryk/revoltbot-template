@@ -223,6 +223,9 @@ class Bot(Client):
         async with aiohttp.ClientSession(headers=self._rest.headers) as session:
             resp = await session.get(user_url)
             user_data = await resp.json()
+            # user is invalid or this could be from a system message
+            if user_data == {'type': 'NotFound'}:
+                return None
             # update the user cache
             user = self._state.users[id] = mutiny.models.User(self._state, user_data)
             await session.close()
