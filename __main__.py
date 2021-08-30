@@ -105,7 +105,8 @@ async def on_message(event: events.MessageEvent) -> None:
     except KeyError:
         user = await bot.fetch_user(dat['author'])
     finally:
-        user = objects.User(mutiny_object=user)
+        if user:
+            user = objects.User(mutiny_object=user)
 
     msg = dat.get('content', None)
     if not isinstance(msg, str):
