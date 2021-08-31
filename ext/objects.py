@@ -3,10 +3,9 @@ import functools
 import os
 
 import mutiny
-from mutiny._internal.models import attachment, channel, message, permissions, server, user
-from mutiny._internal.models.bases import StatefulResource, StatefulModel
+from mutiny import models
 
-_SUPPORTED_TYPES = (user.User, channel.TextChannel, message.Message)
+_SUPPORTED_TYPES = (models.User, models.TextChannel, models.Message)
 
 
 class MutinyPatch:
