@@ -9,13 +9,12 @@ import pathlib
 from ulid import monotonic as ulid
 
 import mutiny
-from mutiny._internal.client import Client
 from . import commands
 from . import objects
 from . import errors
 
 
-class Bot(Client):
+class Bot(mutiny.Client):
     _commands = {}
     _aliased_commands = {}
 
