@@ -13,7 +13,6 @@ from rich.panel import Panel
 from rich import print
 
 from mutiny import Client, events
-from mutiny._internal.rest import RESTClient
 
 from ext.bot import Bot
 from ext import errors
