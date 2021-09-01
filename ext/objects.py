@@ -9,14 +9,13 @@ _SUPPORTED_TYPES = (models.User, models.TextChannel, models.Message)
 
 
 class MutinyPatch:
-
     def __init__(self, mutiny_object=None):
         assert isinstance(mutiny_object, _SUPPORTED_TYPES)
         self._mutiny_object = mutiny_object
         if mutiny_object:
             self.id = mutiny_object.id
         else:
-            self.id = kwargs.get('_id') or kwargs.get('id')
+            self.id = kwargs.get("_id") or kwargs.get("id")
 
     def __getattr__(self, key):
         """Access self._mutiny_object then self.raw_data"""
@@ -32,15 +31,13 @@ class MutinyPatch:
         except KeyError:
             pass
 
-
-
-        s = f'{self} has no attribute {key}'
+        s = f"{self} has no attribute {key}"
         raise AttributeError(s)
 
-class TextChannel(MutinyPatch):
 
+class TextChannel(MutinyPatch):
     def __init__(self, **kwargs):
-        super().__init__(kwargs.pop('mutiny_object'))
+        super().__init__(kwargs.pop("mutiny_object"))
         self.raw_data = kwargs
 
     @property
@@ -49,9 +46,8 @@ class TextChannel(MutinyPatch):
 
 
 class User(MutinyPatch):
-
     def __init__(self, **kwargs):
-        super().__init__(kwargs.pop('mutiny_object'))
+        super().__init__(kwargs.pop("mutiny_object"))
         self.raw_data = kwargs
 
     @property
@@ -60,21 +56,19 @@ class User(MutinyPatch):
 
     @property
     def is_bot(self) -> bool:
-        return not (getattr(self._mutiny_object, 'bot') is None)
+        return not (getattr(self._mutiny_object, "bot") is None)
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other.id == self.id
 
 
 class Message(MutinyPatch):
-
     def __init__(self, **kwargs):
-        super().__init__(kwargs.pop('mutiny_object'))
+        super().__init__(kwargs.pop("mutiny_object"))
         self.raw_data = kwargs
 
 
 class Context:
-
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)

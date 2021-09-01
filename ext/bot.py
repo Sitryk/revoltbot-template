@@ -25,41 +25,41 @@ class Bot(mutiny.Client):
         super().__init__(token=token)
 
     async def start(self):
-        plugin_dir = pathlib.Path(__file__).parent.parent / 'plugins'
+        plugin_dir = pathlib.Path(__file__).parent.parent / "plugins"
         for file in os.listdir(plugin_dir):
             if file.endswith(".py"):
                 name = file[:-3]
                 try:
                     await asyncio.wait_for(self.load_plugin(f"plugins.{name}"), 30)
                 except asyncio.TimeoutError:
-                    print(f'Failed to load extension {name} (timeout)')
+                    print(f"Failed to load extension {name} (timeout)")
                 except Exception as e:
                     print(e)
-        
+
         await super().start()
 
     async def close(self):
         plugins = deepcopy(list(self.plugins.keys()))
         for plugin in plugins:
             try:
-                 await asyncio.wait_for(self.unload_plugin(plugin), 30)
+                await asyncio.wait_for(self.unload_plugin(plugin), 30)
             except asyncio.TimeoutError:
-                    print(f'Failed to load extension {plugin} (timeout)')
+                print(f"Failed to load extension {plugin} (timeout)")
             except Exception as e:
                 print(e)
         await super().close()
-        
+
     @property
     def user(self):
         return self._state.user
-    
 
     # think this should be returning a decorator not being its own...
-    def command(self, *args,**kwargs) -> None:
+    def command(self, *args, **kwargs) -> None:
         def deco(func):
             cmd = commands.command(*args, **kwargs)(func)
             name = cmd.full_name
             self.add_command(name, cmd)
+
         return deco
 
     def _parse_arguments(self, ctx):
@@ -71,20 +71,20 @@ class Bot(mutiny.Client):
         for prefix in self.prefixes:
             if content.startswith(prefix):
                 used_prefix = prefix
-                content = content[len(prefix):]
+                content = content[len(prefix) :]
                 break
 
         if used_prefix is None:
             return
 
         valid_cmd_name = None
-        if ' ' in content:
+        if " " in content:
             # I'm going to just impose 5 groups deep is enough...
             MAX_SUBGROUPS = 5
-            split_content = content.split(' ', MAX_SUBGROUPS)
+            split_content = content.split(" ", MAX_SUBGROUPS)
             for idx, _ in enumerate(split_content, 1):
                 terms = split_content[:idx]
-                attempt = ' '.join(terms)
+                attempt = " ".join(terms)
                 if self.has_command(attempt):
                     valid_cmd_name = attempt
                     continue
@@ -98,8 +98,8 @@ class Bot(mutiny.Client):
             return
         command = self.get_command(valid_cmd_name)
 
-        rest = content[len(valid_cmd_name):]
-        args = [s for s in rest.split(' ') if not s == '']
+        rest = content[len(valid_cmd_name) :]
+        args = [s for s in rest.split(" ") if not s == ""]
         partial_ctx = objects.Context(prefix=used_prefix, command=command, command_args=args)
         return partial_ctx
 
@@ -143,15 +143,17 @@ class Bot(mutiny.Client):
     async def load_plugin(self, plugin: str):
         module = importlib.util.find_spec(plugin)
         if module is None:
-            raise errors.PluginError(f'No module named {plugin}')
+            raise errors.PluginError(f"No module named {plugin}")
         if module.name in self.plugins:
-            raise errors.PluginError(f'Plugin with name {module.name} is already loaded. '
-                                     'Please rename or unload the plugin before loading the other')
+            raise errors.PluginError(
+                f"Plugin with name {module.name} is already loaded. "
+                "Please rename or unload the plugin before loading the other"
+            )
 
         plugin = module.loader.load_module()
         if not hasattr(plugin, "setup"):
-            raise errors.PluginError(f'Plugin {module.name} does not have a setup function')
-        
+            raise errors.PluginError(f"Plugin {module.name} does not have a setup function")
+
         if asyncio.iscoroutinefunction(plugin.setup):
             await plugin.setup(self)
         else:
@@ -159,7 +161,7 @@ class Bot(mutiny.Client):
 
     async def unload_plugin(self, name: str):
         if name not in self.plugins:
-            raise errors.PluginError(f'Plugin {name} is not loaded')
+            raise errors.PluginError(f"Plugin {name} is not loaded")
         plugin = self.plugins.pop(name)
         if hasattr(plugin, "teardown"):
             if asyncio.iscoroutinefunction(plugin.teardown):
@@ -177,7 +179,7 @@ class Bot(mutiny.Client):
             self.add_command(cmd_name, cmd)
 
         for name in plugin._listener_names:
-            listener =  getattr(plugin, name)
+            listener = getattr(plugin, name)
             event_cls = listener.__commands_listener__
             self.add_listener(listener, event_cls=event_cls)
 
@@ -223,7 +225,7 @@ class Bot(mutiny.Client):
             resp = await session.get(user_url)
             user_data = await resp.json()
             # user is invalid or this could be from a system message
-            if user_data == {'type': 'NotFound'}:
+            if user_data == {"type": "NotFound"}:
                 return None
             # update the user cache
             user = self._state.users[id] = mutiny.models.User(self._state, user_data)

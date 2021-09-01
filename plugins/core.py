@@ -8,8 +8,8 @@ import time
 import platform
 import mutiny
 
-class Core(commands.Plugin):
 
+class Core(commands.Plugin):
     def __init__(self, bot):
         self.bot = bot
 
@@ -22,7 +22,7 @@ class Core(commands.Plugin):
             await session.close()
         return status
 
-    #async def update_username(self, data: dict):
+    # async def update_username(self, data: dict):
     #    """Update the bot username."""
     #    headers = self.bot._rest.headers
     #    async with aiohttp.ClientSession(headers=headers) as session:
@@ -34,14 +34,16 @@ class Core(commands.Plugin):
     def secondsToText(self, secs):
         """Convert seconds to readable format."""
         secs = int(secs)
-        days = secs//86400
-        hours = (secs - days*86400)//3600
-        minutes = (secs - days*86400 - hours*3600)//60
-        seconds = secs - days*86400 - hours*3600 - minutes*60
-        result = ("{0} day{1}, ".format(days, "s" if days!=1 else "") if days else "") + \
-        ("{0} hour{1}, ".format(hours, "s" if hours!=1 else "") if hours else "") + \
-        ("{0} minute{1}, ".format(minutes, "s" if minutes!=1 else "") if minutes else "") + \
-        ("{0} second{1} ".format(seconds, "s" if seconds!=1 else "") if seconds else "")
+        days = secs // 86400
+        hours = (secs - days * 86400) // 3600
+        minutes = (secs - days * 86400 - hours * 3600) // 60
+        seconds = secs - days * 86400 - hours * 3600 - minutes * 60
+        result = (
+            ("{0} day{1}, ".format(days, "s" if days != 1 else "") if days else "")
+            + ("{0} hour{1}, ".format(hours, "s" if hours != 1 else "") if hours else "")
+            + ("{0} minute{1}, ".format(minutes, "s" if minutes != 1 else "") if minutes else "")
+            + ("{0} second{1} ".format(seconds, "s" if seconds != 1 else "") if seconds else "")
+        )
         return result
 
     @commands.command()
@@ -79,7 +81,7 @@ class Core(commands.Plugin):
     async def uptime(self, ctx):
         """Bot uptime."""
         uptime = self.secondsToText(time.time() - self.bot.init_time)
-        since = time.strftime('%m/%d/%Y %H:%M:%S',  time.gmtime(self.bot.init_time))
+        since = time.strftime("%m/%d/%Y %H:%M:%S", time.gmtime(self.bot.init_time))
         await ctx.channel.send(f"**Uptime:** {uptime}\n**Since:** {since} UTC")
 
     @commands.group()
@@ -218,8 +220,8 @@ class Core(commands.Plugin):
         else:
             await ctx.channel.send(f"Update failed. ({success})")
 
-    #@set.command()
-    #async def username(self, ctx, username):
+    # @set.command()
+    # async def username(self, ctx, username):
     #    """Update the bot's username"""
     #    if ctx.author != self.bot.owner:
     #        return await ctx.channel.send("Unauthorised.")
