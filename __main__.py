@@ -24,7 +24,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
     level=logging.INFO,
 )
-log = logging.getLogger("revoltbot.core")
+log = logging.getLogger("revoltbot.main")
 
 
 #############
