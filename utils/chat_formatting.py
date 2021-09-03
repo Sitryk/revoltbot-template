@@ -12,6 +12,22 @@ def box(text: str, formatting_language: str = ""):
     return boxed_string
 
 
+def humanize_seconds(seconds: int):
+    """Convert seconds to readable format."""
+    seconds = int(seconds)
+    days = seconds // 86400
+    hours = (seconds - days * 86400) // 3600
+    minutes = (seconds - days * 86400 - hours * 3600) // 60
+    seconds = seconds - days * 86400 - hours * 3600 - minutes * 60
+    result = (
+        ("{0} day{1}, ".format(days, "s" if days != 1 else "") if days else "")
+        + ("{0} hour{1}, ".format(hours, "s" if hours != 1 else "") if hours else "")
+        + ("{0} minute{1}, ".format(minutes, "s" if minutes != 1 else "") if minutes else "")
+        + ("{0} second{1} ".format(seconds, "s" if seconds != 1 else "") if seconds else "")
+    )
+    return result
+
+
 def pagify(text: str, delim="\n", *, shorten_by=0, page_length=2000):
     """
     Chunk text into manageable chunks.

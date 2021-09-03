@@ -1,5 +1,6 @@
 from ext import commands
 from ext.objects import Context
+from utils.chat_formatting import humanize_seconds
 
 import aiohttp
 import json
@@ -30,21 +31,6 @@ class Core(commands.Plugin):
     #            status = r.status
     #        await session.close()
     #    return status
-
-    def secondsToText(self, secs):
-        """Convert seconds to readable format."""
-        secs = int(secs)
-        days = secs // 86400
-        hours = (secs - days * 86400) // 3600
-        minutes = (secs - days * 86400 - hours * 3600) // 60
-        seconds = secs - days * 86400 - hours * 3600 - minutes * 60
-        result = (
-            ("{0} day{1}, ".format(days, "s" if days != 1 else "") if days else "")
-            + ("{0} hour{1}, ".format(hours, "s" if hours != 1 else "") if hours else "")
-            + ("{0} minute{1}, ".format(minutes, "s" if minutes != 1 else "") if minutes else "")
-            + ("{0} second{1} ".format(seconds, "s" if seconds != 1 else "") if seconds else "")
-        )
-        return result
 
     @commands.command()
     async def ping(self, ctx):
@@ -80,7 +66,7 @@ class Core(commands.Plugin):
     @commands.command()
     async def uptime(self, ctx):
         """Bot uptime."""
-        uptime = self.secondsToText(time.time() - self.bot.init_time)
+        uptime = humanize_seconds(time.time() - self.bot.init_time)
         since = time.strftime("%m/%d/%Y %H:%M:%S", time.gmtime(self.bot.init_time))
         await ctx.channel.send(f"**Uptime:** {uptime}\n**Since:** {since} UTC")
 
