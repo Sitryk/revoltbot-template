@@ -65,7 +65,7 @@ class Core(commands.Plugin):
             # Mutiny version is 0.3.1a0 from pypi
             avatar = botinfo.avatar.id
             msg = f"# [](https://autumn.revolt.chat/avatars/{avatar}?width=240)[{name}](/@{self.bot.user.id})\n"
-        msg += f"**Mutiny:** [{mutinyv}](https://pypi.org/project/mutiny/)\n"
+        msg += f"**Mutiny:** [{mutinyv}](<https://pypi.org/project/mutiny/>)\n"
         msg += f"**Python:** [{pythonv}](https://www.python.org)\n"
         msg += f"**Invite URL:** https://app.revolt.chat/bot/{self.bot.user.id}"
         await ctx.channel.send(msg)
