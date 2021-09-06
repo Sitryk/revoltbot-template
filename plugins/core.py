@@ -119,10 +119,14 @@ class Core(commands.Plugin):
             await ctx.channel.send(f"`{info}` isn't a valid option.")
 
     @set.command()
-    async def avatar(self, ctx, url):
+    async def avatar(self, ctx, url=None):
         """Update the bot's avatar."""
         if ctx.author != self.bot.owner:
             return await ctx.channel.send("Unauthorised.")
+        if not url:
+            msg = "You need to provide an image url with this command.\n"
+            await ctx.channel.send(msg)
+            return
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
                 avatar = io.BytesIO(await resp.read())
@@ -140,10 +144,14 @@ class Core(commands.Plugin):
             await ctx.channel.send(f"Update failed. ({success})")
 
     @set.command()
-    async def banner(self, ctx, url):
+    async def banner(self, ctx, url=None):
         """Update the bot's banner."""
         if ctx.author != self.bot.owner:
             return await ctx.channel.send("Unauthorised.")
+        if not url:
+            msg = "You need to provide an image url with this command.\n"
+            await ctx.channel.send(msg)
+            return
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
                 banner = io.BytesIO(await resp.read())
@@ -161,10 +169,15 @@ class Core(commands.Plugin):
             await ctx.channel.send(f"Update failed. ({success})")
 
     @set.command()
-    async def presence(self, ctx, presence):
+    async def presence(self, ctx, presence=None):
         """Update the bot's presence. Busy, Idle, Invisible, Online."""
         if ctx.author != self.bot.owner:
             return await ctx.channel.send("Unauthorised.")
+        if not presence:
+            msg = "You need to provide a presence with this command.\n"
+            msg += "Use `Busy`, `Idle`, `Invisible`, or `Online`."
+            await ctx.channel.send(msg)
+            return
         presli = ["busy", "idle", "invisible", "online"]
         for i in presli:
             if presence.lower() == i:
@@ -184,9 +197,14 @@ class Core(commands.Plugin):
 
     @set.command()
     async def status(self, ctx, *status):
-        """Update the bot's status."""
+        """Update the bot's text status."""
         if ctx.author != self.bot.owner:
             return await ctx.channel.send("Unauthorised.")
+        if not status:
+            msg = "You need to provide a text status with this command.\n"
+            msg += "Use the `set remove status` command to remove the bot's status."
+            await ctx.channel.send(msg)
+            return
         botinfo = await self.bot.fetch_user(self.bot.user.id)
         if botinfo.status is None:
             json_data = {"status": {"text": " ".join(status)}}
@@ -206,6 +224,11 @@ class Core(commands.Plugin):
         """Update the bot's profile."""
         if ctx.author != self.bot.owner:
             return await ctx.channel.send("Unauthorised.")
+        if not text:
+            msg = "You need to provide profile text with this command.\n"
+            msg += "Use the `set remove profile` command to remove the bot's profile text."
+            await ctx.channel.send(msg)
+            return
         json_data = {"profile": {"content": " ".join(text)}}
         success = await self.update_user(json_data)
         if success in [200, 204]:
