@@ -56,8 +56,15 @@ class Core(commands.Plugin):
         pythonv = platform.python_version()
         botinfo = await self.bot.fetch_user(self.bot.user.id)
         name = botinfo.username
-        avatar = botinfo.avatar["_id"]
-        msg = f"# [](https://autumn.revolt.chat/avatars/{avatar}?width=240)[{name}](/@{self.bot.user.id})\n"
+        try:
+            # Mutiny installed is newer version than current pypi release
+            # TODO: remove check once newest Mutiny is published
+            avatar = botinfo.avatar.url
+            msg = f"# []({avatar}?width=240)[{name}](/@{self.bot.user.id})\n"
+        except AttributeError:
+            # Mutiny version is 0.3.1a0 from pypi
+            avatar = botinfo.avatar.id
+            msg = f"# [](https://autumn.revolt.chat/avatars/{avatar}?width=240)[{name}](/@{self.bot.user.id})\n"
         msg += f"**Mutiny:** [{mutinyv}](https://pypi.org/project/mutiny/)\n"
         msg += f"**Python:** [{pythonv}](https://www.python.org)\n"
         msg += f"**Invite URL:** https://app.revolt.chat/bot/{self.bot.user.id}"
