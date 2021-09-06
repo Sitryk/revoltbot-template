@@ -182,12 +182,12 @@ class Core(commands.Plugin):
         for i in presli:
             if presence.lower() == i:
                 botinfo = await self.bot.fetch_user(self.bot.user.id)
-                if botinfo.status is None:
+                if botinfo.status.presence.name is None:
                     json_data = {"status": {"presence": presence.title()}}
-                elif "text" not in botinfo.status:
+                elif not botinfo.status.presence.name:
                     json_data = {"status": {"presence": presence.title()}}
                 else:
-                    status = botinfo.status["text"]
+                    status = botinfo.status.text
                     json_data = {"status": {"text": status, "presence": presence.title()}}
                 success = await self.update_user(json_data)
                 if success in [200, 204]:
@@ -206,13 +206,13 @@ class Core(commands.Plugin):
             await ctx.channel.send(msg)
             return
         botinfo = await self.bot.fetch_user(self.bot.user.id)
-        if botinfo.status is None:
+        if not botinfo.status.text:
             json_data = {"status": {"text": " ".join(status)}}
-        elif "presence" not in botinfo.status:
+        elif not botinfo.status.presence.name:
             json_data = {"status": {"text": " ".join(status)}}
         else:
-            presence = botinfo.status["presence"]
-            json_data = {"status": {"text": " ".join(status), "presence": presence}}
+            presence = botinfo.status.presence.name
+            json_data = {"status": {"text": " ".join(status), "presence": presence.title()}}
         success = await self.update_user(json_data)
         if success in [200, 204]:
             await ctx.channel.send("Status updated!")
