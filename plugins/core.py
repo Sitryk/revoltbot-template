@@ -83,28 +83,28 @@ class Core(commands.Plugin):
         if info.lower() == "avatar":
             json_data = {"remove": "Avatar"}
             success = await self.update_user(json_data)
-            if success == 200:
+            if success in [200, 204]:
                 await ctx.channel.send("Avatar removed!")
             else:
                 await ctx.channel.send(f"Removal failed. ({success})")
         elif info.lower() == "banner":
             json_data = {"remove": "ProfileBackground"}
             success = await self.update_user(json_data)
-            if success == 200:
+            if success in [200, 204]:
                 await ctx.channel.send("Banner removed!")
             else:
                 await ctx.channel.send(f"Removal failed. ({success})")
         elif info.lower() == "profile":
             json_data = {"remove": "ProfileContent"}
             success = await self.update_user(json_data)
-            if success == 200:
+            if success in [200, 204]:
                 await ctx.channel.send("Profile removed!")
             else:
                 await ctx.channel.send(f"Removal failed. ({success})")
         elif info.lower() == "status":
             json_data = {"remove": "StatusText"}
             success = await self.update_user(json_data)
-            if success == 200:
+            if success in [200, 204]:
                 await ctx.channel.send("Status removed!")
             else:
                 await ctx.channel.send(f"Removal failed. ({success})")
@@ -127,7 +127,7 @@ class Core(commands.Plugin):
         avatar_id = json.loads(avatar_str)
         json_data = {"avatar": avatar_id["id"]}
         success = await self.update_user(json_data)
-        if success == 200:
+        if success in [200, 204]:
             await ctx.channel.send("Avatar updated!")
         else:
             await ctx.channel.send(f"Update failed. ({success})")
@@ -148,7 +148,7 @@ class Core(commands.Plugin):
         banner_id = json.loads(banner_str)
         json_data = {"profile": {"background": banner_id["id"]}}
         success = await self.update_user(json_data)
-        if success == 200:
+        if success in [200, 204]:
             await ctx.channel.send("Banner updated!")
         else:
             await ctx.channel.send(f"Update failed. ({success})")
@@ -170,7 +170,7 @@ class Core(commands.Plugin):
                     status = botinfo.status["text"]
                     json_data = {"status": {"text": status, "presence": presence.title()}}
                 success = await self.update_user(json_data)
-                if success == 200:
+                if success in [200, 204]:
                     await ctx.channel.send("Presence updated!")
                 else:
                     await ctx.channel.send(f"Update failed. ({success})")
@@ -189,7 +189,7 @@ class Core(commands.Plugin):
             presence = botinfo.status["presence"]
             json_data = {"status": {"text": " ".join(status), "presence": presence}}
         success = await self.update_user(json_data)
-        if success == 200:
+        if success in [200, 204]:
             await ctx.channel.send("Status updated!")
         else:
             await ctx.channel.send(f"Update failed. ({success})")
@@ -201,7 +201,7 @@ class Core(commands.Plugin):
             return await ctx.channel.send("Unauthorised.")
         json_data = {"profile": {"content": " ".join(text)}}
         success = await self.update_user(json_data)
-        if success == 200:
+        if success in [200, 204]:
             await ctx.channel.send("Profile updated!")
         else:
             await ctx.channel.send(f"Update failed. ({success})")
@@ -213,7 +213,7 @@ class Core(commands.Plugin):
     #        return await ctx.channel.send("Unauthorised.")
     #    json_data = {"name": username}
     #    success = await self.update_username(json_data)
-    #    if success == 200:
+    #    if success in [200, 204]:
     #        await ctx.channel.send("Username updated!")
     #    else:
     #        await ctx.channel.send(f"Update failed. ({success})")
