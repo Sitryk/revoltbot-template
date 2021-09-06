@@ -27,7 +27,7 @@ class Core(commands.Plugin):
     #    """Update the bot username."""
     #    headers = self.bot._rest.headers
     #    async with aiohttp.ClientSession(headers=headers) as session:
-    #        async with session.patch(f"https://api.revolt.chat/bots/{self.bot.id}", json=data) as r:
+    #        async with session.patch(f"https://api.revolt.chat/bots/{self.bot.user.id}", json=data) as r:
     #            status = r.status
     #        await session.close()
     #    return status
@@ -54,13 +54,13 @@ class Core(commands.Plugin):
         """Bot information."""
         mutinyv = mutiny.__version__
         pythonv = platform.python_version()
-        botinfo = await self.bot.fetch_user(self.bot.id)
+        botinfo = await self.bot.fetch_user(self.bot.user.id)
         name = botinfo.username
         avatar = botinfo.avatar["_id"]
-        msg = f"# [](https://autumn.revolt.chat/avatars/{avatar}?width=240)[{name}](/@{self.bot.id})\n"
+        msg = f"# [](https://autumn.revolt.chat/avatars/{avatar}?width=240)[{name}](/@{self.bot.user.id})\n"
         msg += f"**Mutiny:** [{mutinyv}](https://pypi.org/project/mutiny/)\n"
         msg += f"**Python:** [{pythonv}](https://www.python.org)\n"
-        msg += f"**Invite URL:** https://app.revolt.chat/bot/{self.bot.id}"
+        msg += f"**Invite URL:** https://app.revolt.chat/bot/{self.bot.user.id}"
         await ctx.channel.send(msg)
 
     @commands.command()
@@ -161,7 +161,7 @@ class Core(commands.Plugin):
         presli = ["busy", "idle", "invisible", "online"]
         for i in presli:
             if presence.lower() == i:
-                botinfo = await self.bot.fetch_user(self.bot.id)
+                botinfo = await self.bot.fetch_user(self.bot.user.id)
                 if botinfo.status is None:
                     json_data = {"status": {"presence": presence.title()}}
                 elif "text" not in botinfo.status:
@@ -180,7 +180,7 @@ class Core(commands.Plugin):
         """Update the bot's status."""
         if ctx.author != self.bot.owner:
             return await ctx.channel.send("Unauthorised.")
-        botinfo = await self.bot.fetch_user(self.bot.id)
+        botinfo = await self.bot.fetch_user(self.bot.user.id)
         if botinfo.status is None:
             json_data = {"status": {"text": " ".join(status)}}
         elif "presence" not in botinfo.status:
