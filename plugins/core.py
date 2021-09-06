@@ -27,7 +27,7 @@ class Core(commands.Plugin):
     #    """Update the bot username."""
     #    headers = self.bot._rest.headers
     #    async with aiohttp.ClientSession(headers=headers) as session:
-    #        async with session.patch(f"https://api.revolt.chat/bots/{self.bot.id}", json=data) as r:
+    #        async with session.patch(f"https://api.revolt.chat/bots/{self.bot.user.id}", json=data) as r:
     #            status = r.status
     #        await session.close()
     #    return status
@@ -54,13 +54,20 @@ class Core(commands.Plugin):
         """Bot information."""
         mutinyv = mutiny.__version__
         pythonv = platform.python_version()
-        botinfo = await self.bot.fetch_user(self.bot.id)
+        botinfo = await self.bot.fetch_user(self.bot.user.id)
         name = botinfo.username
-        avatar = botinfo.avatar["_id"]
-        msg = f"# [](https://autumn.revolt.chat/avatars/{avatar}?width=240)[{name}](/@{self.bot.id})\n"
-        msg += f"**Mutiny:** [{mutinyv}](https://pypi.org/project/mutiny/)\n"
+        try:
+            # Mutiny installed is newer version than current pypi release
+            # TODO: remove check once newest Mutiny is published
+            avatar = botinfo.avatar.url
+            msg = f"# []({avatar}?width=240)[{name}](/@{self.bot.user.id})\n"
+        except AttributeError:
+            # Mutiny version is 0.3.1a0 from pypi
+            avatar = botinfo.avatar.id
+            msg = f"# [](https://autumn.revolt.chat/avatars/{avatar}?width=240)[{name}](/@{self.bot.user.id})\n"
+        msg += f"**Mutiny:** [{mutinyv}](<https://pypi.org/project/mutiny/>)\n"
         msg += f"**Python:** [{pythonv}](https://www.python.org)\n"
-        msg += f"**Invite URL:** https://app.revolt.chat/bot/{self.bot.id}"
+        msg += f"**Invite URL:** https://app.revolt.chat/bot/{self.bot.user.id}"
         await ctx.channel.send(msg)
 
     @commands.command()
@@ -83,28 +90,28 @@ class Core(commands.Plugin):
         if info.lower() == "avatar":
             json_data = {"remove": "Avatar"}
             success = await self.update_user(json_data)
-            if success == 200:
+            if success in [200, 204]:
                 await ctx.channel.send("Avatar removed!")
             else:
                 await ctx.channel.send(f"Removal failed. ({success})")
         elif info.lower() == "banner":
             json_data = {"remove": "ProfileBackground"}
             success = await self.update_user(json_data)
-            if success == 200:
+            if success in [200, 204]:
                 await ctx.channel.send("Banner removed!")
             else:
                 await ctx.channel.send(f"Removal failed. ({success})")
         elif info.lower() == "profile":
             json_data = {"remove": "ProfileContent"}
             success = await self.update_user(json_data)
-            if success == 200:
+            if success in [200, 204]:
                 await ctx.channel.send("Profile removed!")
             else:
                 await ctx.channel.send(f"Removal failed. ({success})")
         elif info.lower() == "status":
             json_data = {"remove": "StatusText"}
             success = await self.update_user(json_data)
-            if success == 200:
+            if success in [200, 204]:
                 await ctx.channel.send("Status removed!")
             else:
                 await ctx.channel.send(f"Removal failed. ({success})")
@@ -112,10 +119,14 @@ class Core(commands.Plugin):
             await ctx.channel.send(f"`{info}` isn't a valid option.")
 
     @set.command()
-    async def avatar(self, ctx, url):
+    async def avatar(self, ctx, url=None):
         """Update the bot's avatar."""
         if ctx.author != self.bot.owner:
             return await ctx.channel.send("Unauthorised.")
+        if not url:
+            msg = "You need to provide an image url with this command.\n"
+            await ctx.channel.send(msg)
+            return
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
                 avatar = io.BytesIO(await resp.read())
@@ -127,16 +138,20 @@ class Core(commands.Plugin):
         avatar_id = json.loads(avatar_str)
         json_data = {"avatar": avatar_id["id"]}
         success = await self.update_user(json_data)
-        if success == 200:
+        if success in [200, 204]:
             await ctx.channel.send("Avatar updated!")
         else:
             await ctx.channel.send(f"Update failed. ({success})")
 
     @set.command()
-    async def banner(self, ctx, url):
+    async def banner(self, ctx, url=None):
         """Update the bot's banner."""
         if ctx.author != self.bot.owner:
             return await ctx.channel.send("Unauthorised.")
+        if not url:
+            msg = "You need to provide an image url with this command.\n"
+            await ctx.channel.send(msg)
+            return
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
                 banner = io.BytesIO(await resp.read())
@@ -148,48 +163,58 @@ class Core(commands.Plugin):
         banner_id = json.loads(banner_str)
         json_data = {"profile": {"background": banner_id["id"]}}
         success = await self.update_user(json_data)
-        if success == 200:
+        if success in [200, 204]:
             await ctx.channel.send("Banner updated!")
         else:
             await ctx.channel.send(f"Update failed. ({success})")
 
     @set.command()
-    async def presence(self, ctx, presence):
+    async def presence(self, ctx, presence=None):
         """Update the bot's presence. Busy, Idle, Invisible, Online."""
         if ctx.author != self.bot.owner:
             return await ctx.channel.send("Unauthorised.")
+        if not presence:
+            msg = "You need to provide a presence with this command.\n"
+            msg += "Use `Busy`, `Idle`, `Invisible`, or `Online`."
+            await ctx.channel.send(msg)
+            return
         presli = ["busy", "idle", "invisible", "online"]
         for i in presli:
             if presence.lower() == i:
-                botinfo = await self.bot.fetch_user(self.bot.id)
-                if botinfo.status is None:
+                botinfo = await self.bot.fetch_user(self.bot.user.id)
+                if botinfo.status.presence.name is None:
                     json_data = {"status": {"presence": presence.title()}}
-                elif "text" not in botinfo.status:
+                elif not botinfo.status.presence.name:
                     json_data = {"status": {"presence": presence.title()}}
                 else:
-                    status = botinfo.status["text"]
+                    status = botinfo.status.text
                     json_data = {"status": {"text": status, "presence": presence.title()}}
                 success = await self.update_user(json_data)
-                if success == 200:
+                if success in [200, 204]:
                     await ctx.channel.send("Presence updated!")
                 else:
                     await ctx.channel.send(f"Update failed. ({success})")
 
     @set.command()
     async def status(self, ctx, *status):
-        """Update the bot's status."""
+        """Update the bot's text status."""
         if ctx.author != self.bot.owner:
             return await ctx.channel.send("Unauthorised.")
-        botinfo = await self.bot.fetch_user(self.bot.id)
-        if botinfo.status is None:
+        if not status:
+            msg = "You need to provide a text status with this command.\n"
+            msg += "Use the `set remove status` command to remove the bot's status."
+            await ctx.channel.send(msg)
+            return
+        botinfo = await self.bot.fetch_user(self.bot.user.id)
+        if not botinfo.status.text:
             json_data = {"status": {"text": " ".join(status)}}
-        elif "presence" not in botinfo.status:
+        elif not botinfo.status.presence.name:
             json_data = {"status": {"text": " ".join(status)}}
         else:
-            presence = botinfo.status["presence"]
-            json_data = {"status": {"text": " ".join(status), "presence": presence}}
+            presence = botinfo.status.presence.name
+            json_data = {"status": {"text": " ".join(status), "presence": presence.title()}}
         success = await self.update_user(json_data)
-        if success == 200:
+        if success in [200, 204]:
             await ctx.channel.send("Status updated!")
         else:
             await ctx.channel.send(f"Update failed. ({success})")
@@ -199,9 +224,14 @@ class Core(commands.Plugin):
         """Update the bot's profile."""
         if ctx.author != self.bot.owner:
             return await ctx.channel.send("Unauthorised.")
+        if not text:
+            msg = "You need to provide profile text with this command.\n"
+            msg += "Use the `set remove profile` command to remove the bot's profile text."
+            await ctx.channel.send(msg)
+            return
         json_data = {"profile": {"content": " ".join(text)}}
         success = await self.update_user(json_data)
-        if success == 200:
+        if success in [200, 204]:
             await ctx.channel.send("Profile updated!")
         else:
             await ctx.channel.send(f"Update failed. ({success})")
@@ -213,7 +243,7 @@ class Core(commands.Plugin):
     #        return await ctx.channel.send("Unauthorised.")
     #    json_data = {"name": username}
     #    success = await self.update_username(json_data)
-    #    if success == 200:
+    #    if success in [200, 204]:
     #        await ctx.channel.send("Username updated!")
     #    else:
     #        await ctx.channel.send(f"Update failed. ({success})")
